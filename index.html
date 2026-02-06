@@ -1059,25 +1059,25 @@
 
                 box.addEventListener('mousedown', (e) => {
                     if (e.button !== 0) return;
-                
+
                     if (e.ctrlKey || e.metaKey) {
                         isPainting = true;
                         paintColor = lastSingleColor;
                         if (!paintColor) return;
-                
+
                         currentColors[index] = paintColor;
                         box.style.backgroundColor = paintColor;
                         e.preventDefault();
                         return;
                     }
-                
+
                     if (selectedBox && selectedBox !== box) {
                         selectedBox.classList.remove('selected');
                     }
-                
+
                     selectedBox = box;
                     box.classList.add('selected');
-                
+
                     editMode = 'single';
                     selectedIndex = index;
                     openColorPicker(currentColors[index]);
@@ -1093,6 +1093,14 @@
 
                 box.addEventListener('contextmenu', (e) => {
                     e.preventDefault();
+
+                    if (selectedBox && selectedBox !== box) {
+                        selectedBox.classList.remove('selected');
+                    }
+
+                    selectedBox = box;
+                    box.classList.add('selected');
+
                     editMode = 'all';
                     selectedIndex = null;
                     openColorPicker(currentColors[index]);
