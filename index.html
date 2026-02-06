@@ -1059,30 +1059,29 @@
 
                 box.addEventListener('mousedown', (e) => {
                     if (e.button !== 0) return;
-
-                    if (selectedBox && selectedBox !== box) {
-                        selectedBox.classList.remove('selected');
-                    }
-
-                    selectedBox = box;
-                    box.classList.add('selected');
-
+                
                     if (e.ctrlKey || e.metaKey) {
                         isPainting = true;
                         paintColor = lastSingleColor;
                         if (!paintColor) return;
-
+                
                         currentColors[index] = paintColor;
                         box.style.backgroundColor = paintColor;
                         e.preventDefault();
                         return;
                     }
-
+                
+                    if (selectedBox && selectedBox !== box) {
+                        selectedBox.classList.remove('selected');
+                    }
+                
+                    selectedBox = box;
+                    box.classList.add('selected');
+                
                     editMode = 'single';
                     selectedIndex = index;
                     openColorPicker(currentColors[index]);
                 });
-
 
                 box.addEventListener('mouseenter', () => {
                     if (!isPainting || !paintColor) return;
@@ -1092,15 +1091,12 @@
                     box.style.backgroundColor = paintColor;
                 });
 
-
-
                 box.addEventListener('contextmenu', (e) => {
                     e.preventDefault();
                     editMode = 'all';
                     selectedIndex = null;
                     openColorPicker(currentColors[index]);
                 });
-
 
                 grid.appendChild(box);
                 boxes.push(box);
