@@ -1,0 +1,1571 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Le calm le pixel editor</title>
+    <style>
+        input[type="file"] {
+            display: none;
+        }
+
+        :root {
+            --bg-color: #ffffff;
+            --text-color: #000000;
+            --button-color: #cccccc;
+            --button-hover: #dddddd;
+            --border-color: #000000;
+            --modal-bg: rgba(0, 0, 0, 0.5);
+            --modal-content-bg: #ffffff;
+            --error-color: #cc0000;
+            --success-color: #00aa00;
+            --range-gradient: linear-gradient(to right, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000);
+            --thumb-color: #ffffff;
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+        }
+
+        body.dark-mode {
+            --bg-color: #1a1a1a;
+            --text-color: #ffffff;
+            --button-color: #444444;
+            --button-hover: #555555;
+            --border-color: #ffffff;
+            --modal-bg: rgba(0, 0, 0, 0.8);
+            --modal-content-bg: #2a2a2a;
+            --error-color: #ff4444;
+            --success-color: #00ff00;
+        }
+
+        body {
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: var(--bg-color);
+            color: var(--text-color);
+            padding: 20px;
+            transition: background 0.3s, color 0.3s;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .upload-section {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .grid-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(var(--grid-size), var(--pixel-size));
+            gap: 0;
+            border: 2px solid #000000;
+            position: relative;
+        }
+
+        .box {
+            width: var(--pixel-size);
+            height: var(--pixel-size);
+            cursor: pointer;
+            transition: none;
+            border: 1px solid var(--border-color);
+            position: relative;
+        }
+
+        .box::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 100%;
+            height: 100%;
+            transform: translate(-50%, -50%) scale(1);
+            background: inherit;
+            border: 3px solid #000000;
+            opacity: 0;
+            transition: all 0.15s ease;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .box:hover::after {
+            transform: translate(-50%, -50%) scale(2.5);
+            opacity: 1;
+        }
+
+        .color-picker-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: transparent;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            pointer-events: none;
+        }
+
+        .color-picker-modal.active {
+            display: flex;
+            pointer-events: auto;
+        }
+
+        .color-picker-modal.active .color-picker-content {
+            pointer-events: auto;
+        }
+
+        .color-picker-content {
+            background: var(--modal-content-bg);
+            padding: 30px;
+            border: 2px solid var(--border-color);
+            text-align: center;
+        }
+
+        .color-picker-content h2 {
+            color: var(--text-color);
+            margin: 0 0 20px 0;
+        }
+
+        .color-picker-content p {
+            color: var(--text-color);
+            margin: 10px 0;
+            font-size: 14px;
+            opacity: 0.7;
+        }
+
+        .color-preview {
+            width: 80px;
+            height: 80px;
+            margin: 20px auto;
+            border: 2px solid var(--border-color);
+        }
+
+        input[type="color"] {
+            width: 200px;
+            height: 60px;
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+            margin: 20px 0;
+            position: relative;
+        }
+
+        .color-picker-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+
+        .color-hex-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-weight: bold;
+            font-size: 14px;
+            pointer-events: none;
+            text-shadow: 0 0 3px rgba(0, 0, 0, 0.3);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 14px;
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+            background: var(--button-color);
+            color: var(--text-color);
+            transition: background 0.2s;
+            border-radius: 5px;
+        }
+
+        button:hover {
+            background: var(--button-hover);
+        }
+
+        .upload-label {
+            display: inline-block;
+            padding: 10px 20px;
+            background: var(--button-color);
+            color: var(--text-color);
+            cursor: pointer;
+            border: 1px solid var(--border-color);
+            transition: background 0.2s;
+            border-radius: 5px;
+        }
+
+        .dark-mode-toggle {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            padding: 10px 15px;
+            background: var(--button-color);
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: background 0.2s;
+            border-radius: 5px;
+        }
+
+        .border-settings-button {
+            position: fixed;
+            top: 80px;
+            left: 20px;
+            padding: 10px 15px;
+            background: var(--button-color);
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        .color-grade-button {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 15px;
+            background: var(--button-color);
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        .border-settings-modal {
+            position: fixed;
+            top: 50%;
+            left: 20px;
+            transform: translateY(-50%);
+            background: transparent;
+            display: none;
+            z-index: 1000;
+            pointer-events: none;
+        }
+
+        .border-settings-modal.active {
+            display: flex;
+            pointer-events: auto;
+        }
+
+        .border-settings-modal.active .border-settings-content {
+            pointer-events: auto;
+        }
+
+        .border-settings-content {
+            background: var(--modal-content-bg);
+            padding: 30px;
+            border: 2px solid var(--border-color);
+            text-align: left;
+            min-width: 400px;
+        }
+
+        .border-settings-content h2 {
+            color: var(--text-color);
+            margin: 0 0 20px 0;
+            text-align: center;
+        }
+
+        .setting-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 15px 0;
+            padding: 10px 0;
+        }
+
+        .setting-label {
+            font-size: 14px;
+            color: var(--text-color);
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 50px;
+            height: 28px;
+            background: #ccc;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .toggle-switch.active {
+            background: #4cd964;
+        }
+
+        .toggle-switch.disabled {
+            opacity: 0.5;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 24px;
+            height: 24px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.3s;
+        }
+
+        .toggle-switch.active .toggle-slider {
+            transform: translateX(22px);
+        }
+
+        .border-color-picker {
+            width: 60px;
+            height: 30px;
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        .color-grade-modal {
+            position: fixed;
+            top: 50%;
+            right: 20px;
+            transform: translateY(-50%);
+            background: transparent;
+            display: none;
+            z-index: 1000;
+            pointer-events: none;
+        }
+
+        .color-grade-modal.active {
+            display: flex;
+            pointer-events: auto;
+        }
+
+        .color-grade-modal.active .color-grade-content {
+            pointer-events: auto;
+        }
+
+        .color-grade-content {
+            background: var(--modal-content-bg);
+            padding: 30px;
+            border: 2px solid var(--border-color);
+            text-align: center;
+            min-width: 400px;
+        }
+
+        .color-grade-content h2 {
+            color: var(--text-color);
+            margin: 0 0 20px 0;
+        }
+
+        input[type="range"].slider-neutral {
+            background: var(--button-color);
+        }
+
+        input[type="range"].slider-contrast {
+            background: var(--contrast-gradient, var(--button-color));
+        }
+
+        input[type="range"].slider-saturation {
+            background: var(--saturation-gradient, var(--button-color));
+        }
+
+        input[type="range"].slider-brightness {
+            background: var(--brightness-gradient, linear-gradient(to right, #000000, #ffffff));
+        }
+
+        input[type="range"].slider-exposure {
+            background: var(--exposure-gradient, linear-gradient(to right, #000000, #ffffff));
+        }
+
+        .slider-container {
+            margin: 32px 0;
+        }
+
+        .slider-container:first-of-type {
+            margin-top: 8px;
+        }
+
+        .slider-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-color);
+            margin-bottom: 8px;
+            text-align: center;
+        }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 12px;
+            background: var(--range-gradient);
+            outline: none;
+            border-radius: 6px;
+            cursor: pointer;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 28px;
+            height: 28px;
+            background: var(--thumb-color);
+            border: 2px solid var(--border-color);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: background 0.1s;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 28px;
+            height: 28px;
+            background: var(--thumb-color);
+            border: 2px solid var(--border-color);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: background 0.1s;
+        }
+
+        .legend {
+            position: fixed;
+            bottom: 16px;
+            left: 16px;
+            padding: 10px 14px;
+            font-size: 14px;
+            line-height: 1.4;
+            background: var(--button-color);
+            color: var(--text-color);
+            border-radius: 10px;
+            border: 3px double var(--border-color);
+            opacity: 0.9;
+            pointer-events: none;
+        }
+
+        .download-button {
+            position: fixed;
+            bottom: 16px;
+            right: 16px;
+            padding: 10px 15px;
+            background: var(--button-color);
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: background 0.2s;
+            border-radius: 5px;
+            pointer-events: auto;
+            overflow: visible;
+        }
+
+        .download-button:hover {
+            background: var(--button-hover);
+        }
+
+        .download-button-wrapper {
+            position: fixed;
+            bottom: 16px;
+            right: 16px;
+            pointer-events: auto;
+            overflow: visible;
+
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            align-items: stretch;
+        }
+
+        .download-button-wrapper .download-button {
+            position: relative;
+        }
+
+        #confettiContainer {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 9998;
+        }
+
+        .confetti-piece {
+            position: fixed;
+            pointer-events: none;
+            opacity: 0;
+            transform-origin: center center;
+        }
+
+        .confetti-piece.animating {
+            animation: confetti-pop 0.7s ease-out forwards;
+        }
+
+        @keyframes confetti-pop {
+            0% {
+                opacity: 1;
+                transform: translate(0, 0) rotate(var(--rotation, 0deg));
+            }
+
+            100% {
+                opacity: 0;
+                transform: translate(var(--tx), var(--ty)) rotate(var(--rotation-end, 0deg));
+            }
+        }
+
+        .upload-info {
+            margin-top: 16px;
+        }
+    </style>
+</head>
+
+<body class="dark-mode">
+    <div id="confettiContainer"></div>
+    <button class="dark-mode-toggle" id="darkModeToggle">Light Mode</button>
+    <button class="border-settings-button" id="borderSettingsButton">Border Settings</button>
+    <button class="color-grade-button" id="colorGradeButton">Color Grade</button>
+
+    <div class="container">
+        <div class="upload-section">
+            <label for="fileInput" class="upload-label">Upload Square Image</label>
+            <input type="file" id="fileInput" accept="image/*">
+            <div class="upload-info">64x64 max size</div>
+            <div class="error-message" id="errorMessage"></div>
+        </div>
+
+        <div class="grid-container">
+            <div class="grid" id="grid"></div>
+        </div>
+    </div>
+
+    <div class="color-picker-modal" id="colorPickerModal">
+        <div class="color-picker-content">
+            <h2>Choose a new color</h2>
+            <div class="color-preview" id="oldColorPreview"></div>
+            <div class="color-picker-wrapper">
+                <input type="color" id="colorPicker" value="#000000">
+                <div class="color-hex-text" id="colorHexText">#000000</div>
+            </div>
+            <p id="pixelCount">1 pixel will be changed</p>
+            <div class="button-group">
+                <button id="applyBtn">Apply</button>
+                <button id="cancelBtn">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="border-settings-modal" id="borderSettingsModal">
+        <div class="border-settings-content">
+            <h2>Border Settings</h2>
+            <div class="setting-row">
+                <span class="setting-label">Enable Border</span>
+                <div class="toggle-switch active" id="borderEnableToggle">
+                    <div class="toggle-slider"></div>
+                </div>
+            </div>
+            <div class="setting-row">
+                <span class="setting-label">Custom Border Color</span>
+                <div class="toggle-switch" id="borderCustomColorToggle">
+                    <div class="toggle-slider"></div>
+                </div>
+            </div>
+            <div class="setting-row">
+                <span class="setting-label">Border Color</span>
+                <input type="color" class="border-color-picker" id="borderColorPicker" value="#ffffff">
+            </div>
+            <div class="button-group">
+                <button id="closeBorderSettingsBtn">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="color-grade-modal" id="colorGradeModal">
+        <div class="color-grade-content">
+            <h2>Color Grade</h2>
+            <h5 style="font-weight: lighter;">Right Click on slider to reset</h5>
+            <div class="slider-container">
+                <div class="slider-title">Hue</div>
+                <div class="slider-label">
+                    <span>-180</span>
+                    <span id="hueValue">0</span>
+                    <span>+180</span>
+                </div>
+                <input type="range" id="hueSlider" min="-180" max="180" value="0" step="1">
+            </div>
+            <div class="slider-container">
+                <div class="slider-title">Contrast</div>
+                <div class="slider-label">
+                    <span>0</span>
+                    <span id="contrastValue">100</span>
+                    <span>200</span>
+                </div>
+                <input type="range" id="contrastSlider" class="slider-contrast" min="0" max="200" value="100" step="1">
+            </div>
+            <div class="slider-container">
+                <div class="slider-title">Saturation</div>
+                <div class="slider-label">
+                    <span>0</span>
+                    <span id="saturationValue">100</span>
+                    <span>200</span>
+                </div>
+                <input type="range" id="saturationSlider" class="slider-saturation" min="0" max="200" value="100"
+                    step="1">
+            </div>
+            <div class="slider-container">
+                <div class="slider-title">Brightness</div>
+                <div class="slider-label">
+                    <span>0</span>
+                    <span id="brightnessValue">100</span>
+                    <span>200</span>
+                </div>
+                <input type="range" id="brightnessSlider" class="slider-brightness" min="0" max="200" value="100"
+                    step="1">
+            </div>
+            <div class="slider-container">
+                <div class="slider-title">Exposure</div>
+                <div class="slider-label">
+                    <span>0</span>
+                    <span id="exposureValue">100</span>
+                    <span>200</span>
+                </div>
+                <input type="range" id="exposureSlider" class="slider-exposure" min="0" max="200" value="100" step="1">
+            </div>
+            <div class="button-group">
+                <button id="applyColorGradeBtn">Apply</button>
+                <button id="cancelColorGradeBtn">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="download-button-wrapper" id="downloadButtonWrapper">
+        <button class="download-button" id="copyClipboardButton">
+            Copy png to clipboard
+        </button>
+        <button class="download-button" id="downloadButton">Download PNG</button>
+    </div>
+    <script>
+        const grid = document.getElementById('grid');
+        const modal = document.getElementById('colorPickerModal');
+        const colorPicker = document.getElementById('colorPicker');
+        const applyBtn = document.getElementById('applyBtn');
+        const cancelBtn = document.getElementById('cancelBtn');
+        const fileInput = document.getElementById('fileInput');
+        const darkModeToggle = document.getElementById('darkModeToggle');
+        const oldColorPreview = document.getElementById('oldColorPreview');
+        const errorMessage = document.getElementById('errorMessage');
+        const pixelCount = document.getElementById('pixelCount');
+        const colorHexText = document.getElementById('colorHexText');
+        const colorGradeButton = document.getElementById('colorGradeButton');
+        const colorGradeModal = document.getElementById('colorGradeModal');
+        const hueSlider = document.getElementById('hueSlider');
+        const hueValue = document.getElementById('hueValue');
+        const contrastSlider = document.getElementById('contrastSlider');
+        const contrastValue = document.getElementById('contrastValue');
+        const saturationSlider = document.getElementById('saturationSlider');
+        const saturationValue = document.getElementById('saturationValue');
+        const brightnessSlider = document.getElementById('brightnessSlider');
+        const brightnessValue = document.getElementById('brightnessValue');
+        const exposureSlider = document.getElementById('exposureSlider');
+        const exposureValue = document.getElementById('exposureValue');
+        const applyColorGradeBtn = document.getElementById('applyColorGradeBtn');
+        const cancelColorGradeBtn = document.getElementById('cancelColorGradeBtn');
+        const borderSettingsButton = document.getElementById('borderSettingsButton');
+        const borderSettingsModal = document.getElementById('borderSettingsModal');
+        const borderEnableToggle = document.getElementById('borderEnableToggle');
+        const borderCustomColorToggle = document.getElementById('borderCustomColorToggle');
+        const borderColorPicker = document.getElementById('borderColorPicker');
+        const closeBorderSettingsBtn = document.getElementById('closeBorderSettingsBtn');
+        const downloadButton = document.getElementById('downloadButton');
+        const downloadButtonWrapper = document.getElementById('downloadButtonWrapper');
+        const copyClipboardButton = document.getElementById('copyClipboardButton');
+
+        const elements = {
+            grid, modal, colorPicker, applyBtn, cancelBtn, fileInput,
+            darkModeToggle, hueSlider, downloadButton,
+            colorGradeButton, colorGradeModal, borderSettingsButton,
+            borderSettingsModal, borderEnableToggle, borderCustomColorToggle,
+            borderColorPicker, closeBorderSettingsBtn
+        };
+
+        console.log('=== Element Existence Check ===');
+        Object.keys(elements).forEach(key => {
+            if (!elements[key]) {
+                console.error(`❌ ${key} is NULL`);
+            } else {
+                console.log(`✓ ${key} exists`);
+            }
+        });
+        console.log('==============================');
+
+        let gridSize = 16;
+        let pixelSize = 32;
+        let borderEnabled = true;
+        let customBorderColor = false;
+        let currentBorderColor = '#ffffff';
+
+        function updateSliderThumbColor() {
+            const avgColor = getAverageColor();
+            const avgRgb = hexToRgb(avgColor);
+            const color = `rgb(${avgRgb.r}, ${avgRgb.g}, ${avgRgb.b})`;
+            document.documentElement.style.setProperty('--thumb-color', color);
+        }
+
+        function updateColorGradeGradients() {
+            const avgColor = getAverageColor();
+            const highSatColor = getHighSaturationColor(avgColor);
+            document.documentElement.style.setProperty('--range-gradient', generateHueGradient(avgColor));
+            document.documentElement.style.setProperty('--contrast-gradient', 'linear-gradient(to right, #d3d3d3, ' + avgColor + ')');
+            document.documentElement.style.setProperty('--saturation-gradient', 'linear-gradient(to right, #808080, ' + highSatColor + ')');
+            document.documentElement.style.setProperty('--brightness-gradient', 'linear-gradient(to right, #000000, #ffffff)');
+            document.documentElement.style.setProperty('--exposure-gradient', 'linear-gradient(to right, #000000, #ffffff)');
+        }
+
+        function getContrastColor(hex) {
+            const r = parseInt(hex.substr(1, 2), 16);
+            const g = parseInt(hex.substr(3, 2), 16);
+            const b = parseInt(hex.substr(5, 2), 16);
+
+            const distanceToWhite = Math.sqrt(
+                Math.pow(255 - r, 2) + Math.pow(255 - g, 2) + Math.pow(255 - b, 2)
+            );
+            const distanceToBlack = Math.sqrt(
+                Math.pow(r, 2) + Math.pow(g, 2) + Math.pow(b, 2)
+            );
+
+            return distanceToWhite > distanceToBlack ? '#FFFFFF' : '#000000';
+        }
+
+        function updateHexText(color) {
+            colorHexText.textContent = color.toUpperCase();
+            colorHexText.style.color = getContrastColor(color);
+        }
+
+        function generateCheckerboard() {
+            const colors = [];
+            for (let y = 0; y < gridSize; y++) {
+                for (let x = 0; x < gridSize; x++) {
+                    const isLight = (x + y) % 2 === 0;
+                    colors.push(isLight ? "#FFFFFF" : "#CCCCCC");
+                }
+            }
+            return colors;
+        }
+
+        function calculatePixelSize(size) {
+            const maxGridWidth = Math.min(window.innerWidth - 100, 800);
+            const maxGridHeight = Math.min(window.innerHeight - 250, 800);
+            const maxSize = Math.min(maxGridWidth, maxGridHeight);
+
+            let calculatedSize = Math.floor(maxSize / size);
+            return Math.max(16, Math.min(64, calculatedSize));
+        }
+
+        function updateGridSize(size) {
+            gridSize = size;
+            pixelSize = calculatePixelSize(size);
+            document.documentElement.style.setProperty('--grid-size', size);
+            document.documentElement.style.setProperty('--pixel-size', pixelSize + 'px');
+        }
+
+        function hexToRgb(hex) {
+            const r = parseInt(hex.substr(1, 2), 16);
+            const g = parseInt(hex.substr(3, 2), 16);
+            const b = parseInt(hex.substr(5, 2), 16);
+            return { r, g, b };
+        }
+
+        function rgbToHsl(r, g, b) {
+            r /= 255;
+            g /= 255;
+            b /= 255;
+
+            const max = Math.max(r, g, b);
+            const min = Math.min(r, g, b);
+            const delta = max - min;
+
+            let h = 0;
+            let s = 0;
+            let l = (max + min) / 2;
+
+            if (delta !== 0) {
+                s = l > 0.5 ? delta / (2 - max - min) : delta / (max + min);
+
+                if (max === r) {
+                    h = ((g - b) / delta + (g < b ? 6 : 0)) / 6;
+                } else if (max === g) {
+                    h = ((b - r) / delta + 2) / 6;
+                } else {
+                    h = ((r - g) / delta + 4) / 6;
+                }
+            }
+
+            return { h, s, l };
+        }
+
+        function hslToRgb(h, s, l) {
+            let r, g, b;
+
+            if (s === 0) {
+                r = g = b = l;
+            } else {
+                const hue2rgb = (p, q, t) => {
+                    if (t < 0) t += 1;
+                    if (t > 1) t -= 1;
+                    if (t < 1 / 6) return p + (q - p) * 6 * t;
+                    if (t < 1 / 2) return q;
+                    if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+                    return p;
+                };
+
+                const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+                const p = 2 * l - q;
+
+                r = hue2rgb(p, q, h + 1 / 3);
+                g = hue2rgb(p, q, h);
+                b = hue2rgb(p, q, h - 1 / 3);
+            }
+
+            return {
+                r: Math.round(r * 255),
+                g: Math.round(g * 255),
+                b: Math.round(b * 255)
+            };
+        }
+
+        function rgbToHex(r, g, b) {
+            return "#" + [r, g, b].map(x => {
+                const hex = x.toString(16).toUpperCase();
+                return hex.length === 1 ? "0" + hex : hex;
+            }).join("");
+        }
+
+        function updateBoxBorders() {
+            boxes.forEach(box => {
+                if (borderEnabled) {
+                    box.style.border = `1px solid ${currentBorderColor}`;
+                } else {
+                    box.style.border = 'none';
+                }
+            });
+        }
+
+        function getAverageColor() {
+            if (currentColors.length === 0) return '#ffffff';
+
+            let totalR = 0, totalG = 0, totalB = 0;
+            currentColors.forEach(color => {
+                const rgb = hexToRgb(color);
+                totalR += rgb.r;
+                totalG += rgb.g;
+                totalB += rgb.b;
+            });
+
+            const avgR = Math.round(totalR / currentColors.length);
+            const avgG = Math.round(totalG / currentColors.length);
+            const avgB = Math.round(totalB / currentColors.length);
+
+            return rgbToHex(avgR, avgG, avgB);
+        }
+
+        function getHighSaturationColor(hex) {
+            const rgb = hexToRgb(hex);
+            const r = rgb.r, g = rgb.g, b = rgb.b;
+            const M = Math.max(r, g, b);
+            if (M <= 0) return '#000000';
+            const scale = 255 / M;
+            return rgbToHex(Math.min(255, Math.round(r * scale)), Math.min(255, Math.round(g * scale)), Math.min(255, Math.round(b * scale)));
+        }
+
+        function generateHueGradient(centerColor) {
+            const rgb = hexToRgb(centerColor);
+            const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
+
+            const colors = [];
+            const steps = 7;
+
+            for (let i = 0; i < steps; i++) {
+                const hueOffset = ((i / (steps - 1)) - 0.5);
+                let hue = hsl.h + hueOffset;
+                while (hue < 0) hue += 1;
+                while (hue > 1) hue -= 1;
+
+                const gradRgb = hslToRgb(hue, 1, 0.5);
+                colors.push(rgbToHex(gradRgb.r, gradRgb.g, gradRgb.b));
+            }
+
+            return `linear-gradient(to right, ${colors.join(', ')})`;
+        }
+
+        function adjustHue(hex, degrees) {
+            const rgb = hexToRgb(hex);
+            const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
+
+            let newHue = hsl.h + (degrees / 360);
+
+            while (newHue < 0) newHue += 1;
+            while (newHue > 1) newHue -= 1;
+
+            const newRgb = hslToRgb(newHue, hsl.s, hsl.l);
+            return rgbToHex(newRgb.r, newRgb.g, newRgb.b);
+        }
+
+        function adjustContrast(hex, percent) {
+            if (percent <= 0) return rgbToHex(128, 128, 128);
+            const factor = percent / 100;
+            const rgb = hexToRgb(hex);
+            const r = Math.round(((rgb.r / 255 - 0.5) * factor + 0.5) * 255);
+            const g = Math.round(((rgb.g / 255 - 0.5) * factor + 0.5) * 255);
+            const b = Math.round(((rgb.b / 255 - 0.5) * factor + 0.5) * 255);
+            return rgbToHex(Math.max(0, Math.min(255, r)), Math.max(0, Math.min(255, g)), Math.max(0, Math.min(255, b)));
+        }
+
+        function adjustSaturation(hex, percent) {
+            const rgb = hexToRgb(hex);
+            const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
+            if (percent <= 0) {
+                const gray = Math.round(hsl.l * 255);
+                return rgbToHex(gray, gray, gray);
+            }
+            const newS = Math.max(0, Math.min(1, hsl.s * (percent / 100)));
+            const newRgb = hslToRgb(hsl.h, newS, hsl.l);
+            return rgbToHex(newRgb.r, newRgb.g, newRgb.b);
+        }
+
+        function adjustBrightness(hex, percent) {
+            if (percent <= 0) return rgbToHex(0, 0, 0);
+            const factor = percent / 100;
+            const rgb = hexToRgb(hex);
+            const r = Math.round(rgb.r * factor);
+            const g = Math.round(rgb.g * factor);
+            const b = Math.round(rgb.b * factor);
+            return rgbToHex(Math.max(0, Math.min(255, r)), Math.max(0, Math.min(255, g)), Math.max(0, Math.min(255, b)));
+        }
+
+        function adjustExposure(hex, value) {
+            const factor = Math.pow(2, (value - 100) / 100);
+            const rgb = hexToRgb(hex);
+            const r = Math.round(rgb.r * factor);
+            const g = Math.round(rgb.g * factor);
+            const b = Math.round(rgb.b * factor);
+            return rgbToHex(Math.max(0, Math.min(255, r)), Math.max(0, Math.min(255, g)), Math.max(0, Math.min(255, b)));
+        }
+
+        function applyColorGradePipeline(colors, hueDeg, contrastPct, saturationPct, brightnessPct, exposureVal) {
+            return colors.map(color => {
+                let c = adjustHue(color, hueDeg);
+                c = adjustContrast(c, contrastPct);
+                c = adjustSaturation(c, saturationPct);
+                c = adjustBrightness(c, brightnessPct);
+                c = adjustExposure(c, exposureVal);
+                return c;
+            });
+        }
+
+        let boxes = [];
+        let selectedColor = null;
+        let selectedIndex = null;
+        let editMode = 'single';
+        let lastSingleColor = null;
+        let isPainting = false;
+        let paintColor = null;
+
+        document.addEventListener('mouseup', () => {
+            isPainting = false;
+        });
+
+
+        updateGridSize(16);
+
+        let currentColors = generateCheckerboard();
+        let originalColors = [...currentColors];
+
+        if (darkModeToggle) {
+            if (document.body.classList.contains('dark-mode')) {
+                darkModeToggle.textContent = 'Light Mode';
+                if (!customBorderColor) {
+                    currentBorderColor = '#000000';
+                    borderColorPicker.value = '#000000';
+                    document.documentElement.style.setProperty('--border-color', '#000000');
+                    updateBoxBorders();
+                }
+            }
+        }
+
+        if (darkModeToggle) {
+            darkModeToggle.addEventListener('click', () => {
+                document.body.classList.toggle('dark-mode');
+                if (document.body.classList.contains('dark-mode')) {
+                    darkModeToggle.textContent = 'Light Mode';
+                    if (!customBorderColor) {
+                        currentBorderColor = '#000000';
+                        if (borderColorPicker) borderColorPicker.value = '#000000';
+                        document.documentElement.style.setProperty('--border-color', '#000000');
+                        updateBoxBorders();
+                    }
+                } else {
+                    darkModeToggle.textContent = 'Dark Mode';
+                    if (!customBorderColor) {
+                        currentBorderColor = '#000000';
+                        if (borderColorPicker) borderColorPicker.value = '#000000';
+                        document.documentElement.style.setProperty('--border-color', '#000000');
+                        updateBoxBorders();
+                    }
+                }
+            });
+        }
+
+        function createGrid() {
+            grid.innerHTML = '';
+            boxes = [];
+
+            currentColors.forEach((color, index) => {
+                const box = document.createElement('div');
+                box.className = 'box';
+                box.style.backgroundColor = color;
+                if (borderEnabled) {
+                    box.style.border = `1px solid ${currentBorderColor}`;
+                } else {
+                    box.style.border = 'none';
+                }
+                box.dataset.index = index;
+
+                box.addEventListener('mousedown', (e) => {
+                    if (e.button !== 0) return;
+
+                    if (e.ctrlKey || e.metaKey) {
+                        isPainting = true;
+                        paintColor = lastSingleColor;
+                        if (!paintColor) return;
+
+                        currentColors[index] = paintColor;
+                        box.style.backgroundColor = paintColor;
+                        e.preventDefault();
+                        return;
+                    }
+
+                    editMode = 'single';
+                    selectedIndex = index;
+                    openColorPicker(currentColors[index]);
+                });
+
+                box.addEventListener('mouseenter', () => {
+                    if (!isPainting || !paintColor) return;
+
+                    const i = parseInt(box.dataset.index);
+                    currentColors[i] = paintColor;
+                    box.style.backgroundColor = paintColor;
+                });
+
+
+
+                box.addEventListener('contextmenu', (e) => {
+                    e.preventDefault();
+                    editMode = 'all';
+                    selectedIndex = null;
+                    openColorPicker(currentColors[index]);
+                });
+
+
+                grid.appendChild(box);
+                boxes.push(box);
+            });
+
+            console.log(`Created ${boxes.length} boxes in a ${gridSize}x${gridSize} grid`);
+        }
+
+        function openColorPicker(color) {
+            if (borderSettingsModal) borderSettingsModal.classList.remove('active');
+            if (colorGradeModal) colorGradeModal.classList.remove('active');
+            selectedColor = color.toUpperCase();
+            const count = editMode === 'all'
+                ? currentColors.filter(c => c.toUpperCase() === selectedColor).length
+                : 1;
+
+            oldColorPreview.style.backgroundColor = selectedColor;
+            colorPicker.value = selectedColor;
+            updateHexText(selectedColor);
+            pixelCount.textContent =
+                editMode === 'all'
+                    ? `${count} pixels will be changed`
+                    : `Only this pixel will be changed`;
+
+            modal.classList.add('active');
+        }
+
+        function closeModal() {
+            modal.classList.remove('active');
+            selectedColor = null;
+        }
+
+        function applyColorChange() {
+            const newColor = colorPicker.value.toUpperCase();
+
+            if (editMode === 'all') {
+                currentColors = currentColors.map(color =>
+                    color.toUpperCase() === selectedColor ? newColor : color
+                );
+            } else if (editMode === 'single' && selectedIndex !== null) {
+                currentColors[selectedIndex] = newColor;
+                lastSingleColor = newColor;
+            }
+
+
+            boxes.forEach((box, index) => {
+                box.style.backgroundColor = currentColors[index];
+            });
+
+            closeModal();
+        }
+
+        function handleImageUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            errorMessage.textContent = '';
+
+            const img = new Image();
+            const reader = new FileReader();
+
+            reader.onload = function (event) {
+                img.onload = function () {
+                    if (img.width !== img.height) {
+                        errorMessage.textContent = `Error: Image must be square (uploaded: ${img.width}×${img.height})`;
+                        fileInput.value = '';
+                        return;
+                    }
+
+                    if (img.width > 64) {
+                        errorMessage.textContent = `Error: Image must be 64×64 or smaller (uploaded: ${img.width}×${img.height})`;
+                        fileInput.value = '';
+                        return;
+                    }
+
+                    updateGridSize(img.width);
+
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0);
+
+                    const imageData = ctx.getImageData(0, 0, img.width, img.height);
+                    const data = imageData.data;
+
+                    const newColors = [];
+                    for (let i = 0; i < data.length; i += 4) {
+                        const r = data[i];
+                        const g = data[i + 1];
+                        const b = data[i + 2];
+                        newColors.push(rgbToHex(r, g, b));
+                    }
+
+                    currentColors = newColors;
+                    createGrid();
+
+                    errorMessage.style.color = 'var(--success-color)';
+                    errorMessage.textContent = `Image loaded successfully! (${img.width}×${img.height})`;
+                    setTimeout(() => {
+                        errorMessage.textContent = '';
+                        errorMessage.style.color = 'var(--error-color)';
+                    }, 2000);
+                };
+
+                img.onerror = function () {
+                    errorMessage.textContent = 'Error: Could not load image';
+                    fileInput.value = '';
+                };
+
+                img.src = event.target.result;
+            };
+
+            reader.onerror = function () {
+                errorMessage.textContent = 'Error: Could not read file';
+                fileInput.value = '';
+            };
+
+            reader.readAsDataURL(file);
+        }
+
+        if (borderSettingsButton) {
+            borderSettingsButton.addEventListener('click', () => {
+                if (modal) modal.classList.remove('active');
+                if (colorGradeModal) colorGradeModal.classList.remove('active');
+                if (borderSettingsModal) borderSettingsModal.classList.add('active');
+            });
+        }
+
+        if (closeBorderSettingsBtn) {
+            closeBorderSettingsBtn.addEventListener('click', () => {
+                if (borderSettingsModal) borderSettingsModal.classList.remove('active');
+            });
+        }
+
+        if (borderEnableToggle) {
+            borderEnableToggle.addEventListener('click', () => {
+                borderEnabled = !borderEnabled;
+                borderEnableToggle.classList.toggle('active');
+                updateBoxBorders();
+            });
+        }
+
+        if (borderCustomColorToggle) {
+            borderCustomColorToggle.addEventListener('click', () => {
+                customBorderColor = !customBorderColor;
+                borderCustomColorToggle.classList.toggle('active');
+
+                if (!customBorderColor) {
+                    currentBorderColor = '#000000';
+                    if (borderColorPicker) borderColorPicker.value = '#000000';
+                    document.documentElement.style.setProperty('--border-color', currentBorderColor);
+                    updateBoxBorders();
+                }
+            });
+        }
+
+        if (borderColorPicker) {
+            borderColorPicker.addEventListener('input', (e) => {
+                currentBorderColor = e.target.value;
+                customBorderColor = true;
+                if (borderCustomColorToggle) borderCustomColorToggle.classList.add('active');
+
+                if ((document.body.classList.contains('dark-mode') && currentBorderColor.toUpperCase() === '#FFFFFF') ||
+                    (!document.body.classList.contains('dark-mode') && currentBorderColor.toUpperCase() === '#000000')) {
+                    customBorderColor = false;
+                    if (borderCustomColorToggle) borderCustomColorToggle.classList.remove('active');
+                }
+
+                document.documentElement.style.setProperty('--border-color', currentBorderColor);
+                updateBoxBorders();
+            });
+        }
+
+        if (colorGradeButton) {
+            colorGradeButton.addEventListener('click', () => {
+                if (modal) modal.classList.remove('active');
+                if (borderSettingsModal) borderSettingsModal.classList.remove('active');
+                originalColors = [...currentColors];
+                if (hueSlider) hueSlider.value = 0;
+                if (hueValue) hueValue.textContent = '0';
+                if (contrastSlider) contrastSlider.value = 100;
+                if (contrastValue) contrastValue.textContent = '100';
+                if (saturationSlider) saturationSlider.value = 100;
+                if (saturationValue) saturationValue.textContent = '100';
+                if (brightnessSlider) brightnessSlider.value = 100;
+                if (brightnessValue) brightnessValue.textContent = '100';
+                if (exposureSlider) exposureSlider.value = 100;
+                if (exposureValue) exposureValue.textContent = '100';
+
+                updateColorGradeGradients();
+                updateSliderThumbColor();
+                if (colorGradeModal) colorGradeModal.classList.add('active');
+            });
+        }
+
+        function updateColorGradePreview() {
+            const hueDeg = hueSlider ? parseInt(hueSlider.value) : 0;
+            const contrastPct = contrastSlider ? parseInt(contrastSlider.value) : 100;
+            const saturationPct = saturationSlider ? parseInt(saturationSlider.value) : 100;
+            const brightnessPct = brightnessSlider ? parseInt(brightnessSlider.value) : 100;
+            const exposureVal = exposureSlider ? parseInt(exposureSlider.value) : 100;
+            currentColors = applyColorGradePipeline(originalColors, hueDeg, contrastPct, saturationPct, brightnessPct, exposureVal);
+            boxes.forEach((box, index) => {
+                box.style.backgroundColor = currentColors[index];
+            });
+            updateSliderThumbColor();
+        }
+
+        if (applyColorGradeBtn) {
+            applyColorGradeBtn.addEventListener('click', () => {
+                if (colorGradeModal) colorGradeModal.classList.remove('active');
+            });
+        }
+
+        function resetSliderToMiddle(slider, valueEl, middleValue, valueFormat) {
+            if (!slider) return;
+            slider.value = middleValue;
+            if (valueEl) valueEl.textContent = valueFormat(middleValue);
+            updateColorGradePreview();
+        }
+
+        if (hueSlider) {
+            hueSlider.addEventListener('input', (e) => {
+                const adjustment = parseInt(e.target.value);
+                if (hueValue) hueValue.textContent = `${adjustment > 0 ? '+' : ''}${adjustment}`;
+                updateColorGradePreview();
+            });
+            hueSlider.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                resetSliderToMiddle(hueSlider, hueValue, 0, (v) => (v > 0 ? '+' : '') + v);
+            });
+        }
+
+        if (contrastSlider) {
+            contrastSlider.addEventListener('input', (e) => {
+                const v = e.target.value;
+                if (contrastValue) contrastValue.textContent = v;
+                updateColorGradePreview();
+            });
+            contrastSlider.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                resetSliderToMiddle(contrastSlider, contrastValue, 100, (v) => String(v));
+            });
+        }
+        if (saturationSlider) {
+            saturationSlider.addEventListener('input', (e) => {
+                const v = e.target.value;
+                if (saturationValue) saturationValue.textContent = v;
+                updateColorGradePreview();
+            });
+            saturationSlider.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                resetSliderToMiddle(saturationSlider, saturationValue, 100, (v) => String(v));
+            });
+        }
+        if (brightnessSlider) {
+            brightnessSlider.addEventListener('input', (e) => {
+                const v = e.target.value;
+                if (brightnessValue) brightnessValue.textContent = v;
+                updateColorGradePreview();
+            });
+            brightnessSlider.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                resetSliderToMiddle(brightnessSlider, brightnessValue, 100, (v) => String(v));
+            });
+        }
+        if (exposureSlider) {
+            exposureSlider.addEventListener('input', (e) => {
+                const v = e.target.value;
+                if (exposureValue) exposureValue.textContent = v;
+                updateColorGradePreview();
+            });
+            exposureSlider.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                resetSliderToMiddle(exposureSlider, exposureValue, 100, (v) => String(v));
+            });
+        }
+
+        if (cancelColorGradeBtn) {
+            cancelColorGradeBtn.addEventListener('click', () => {
+                currentColors = [...originalColors];
+                boxes.forEach((box, index) => {
+                    box.style.backgroundColor = currentColors[index];
+                });
+                if (colorGradeModal) colorGradeModal.classList.remove('active');
+            });
+        }
+
+        if (colorPicker) {
+            colorPicker.addEventListener('input', (e) => {
+                updateHexText(e.target.value);
+            });
+        }
+
+        if (applyBtn) {
+            applyBtn.addEventListener('click', applyColorChange);
+        }
+
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', closeModal);
+        }
+
+        if (fileInput) {
+            fileInput.addEventListener('change', handleImageUpload);
+        }
+
+        if (modal) {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    closeModal();
+                }
+            });
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                if (modal && modal.classList.contains('active')) {
+                    closeModal();
+                }
+                if (colorGradeModal && colorGradeModal.classList.contains('active')) {
+                    currentColors = [...originalColors];
+                    boxes.forEach((box, index) => {
+                        box.style.backgroundColor = currentColors[index];
+                    });
+                    colorGradeModal.classList.remove('active');
+                }
+                if (borderSettingsModal && borderSettingsModal.classList.contains('active')) {
+                    borderSettingsModal.classList.remove('active');
+                }
+            }
+        });
+
+        createGrid();
+
+        (function () {
+            const confettiContainer = document.getElementById('confettiContainer');
+            const confettiColors = ['#ff6b6b', '#feca57', '#48dbfb', '#ff9ff3', '#54a0ff', '#5f27cd', '#00d2d3', '#ff6348', '#1dd1a1', '#ee5a24'];
+            const burstSize = 15;
+            const velocityDist = 65;
+            let lastBurst = 0;
+            const throttleMs = 80;
+
+            function spawnConfetti(cx, cy, inward = false) {
+                if (!confettiContainer) return;
+
+                const count = inward ? 20 : burstSize;
+                const radius = inward ? 60 : 0;
+
+                for (let i = 0; i < count; i++) {
+                    const angle = Math.random() * Math.PI * 2;
+
+                    const startX = inward
+                        ? cx + Math.cos(angle) * radius
+                        : cx;
+
+                    const startY = inward
+                        ? cy + Math.sin(angle) * radius
+                        : cy;
+
+                    const dx = inward ? -Math.cos(angle) : Math.cos(angle);
+                    const dy = inward ? -Math.sin(angle) : Math.sin(angle);
+
+                    const width = 2 + Math.random() * 2;
+                    const height = 8 + Math.random() * 8;
+
+                    const color =
+                        Math.random() < 0.25
+                            ? getAverageColor()
+                            : confettiColors[Math.floor(Math.random() * confettiColors.length)];
+
+                    const piece = document.createElement('div');
+                    piece.className = 'confetti-piece animating';
+
+                    piece.style.left = (startX - width / 2) + 'px';
+                    piece.style.top = (startY - height / 2) + 'px';
+                    piece.style.width = width + 'px';
+                    piece.style.height = height + 'px';
+                    piece.style.backgroundColor = color;
+                    piece.style.borderRadius = '2px';
+
+                    const velocity = inward ? 40 : velocityDist;
+
+                    piece.style.setProperty('--tx', (dx * velocity) + 'px');
+                    piece.style.setProperty('--ty', (dy * velocity) + 'px');
+                    piece.style.setProperty('--rotation', Math.random() * 360 + 'deg');
+                    piece.style.setProperty('--rotation-end', Math.random() * 360 + 'deg');
+
+                    piece.addEventListener('animationend', () => {
+                        piece.remove();
+                    });
+
+                    confettiContainer.appendChild(piece);
+                }
+            }
+
+            if (confettiContainer && (downloadButtonWrapper || downloadButton)) {
+                const target = downloadButtonWrapper || downloadButton;
+                let hovered = false;
+
+                target.addEventListener('mouseenter', (e) => {
+                    if (hovered) return;
+                    hovered = true;
+                    spawnConfetti(e.clientX, e.clientY);
+                });
+
+                target.addEventListener('mouseleave', () => {
+                    hovered = false;
+                });
+            }
+
+        })();
+
+        if (downloadButton) {
+            downloadButton.addEventListener('click', () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = gridSize;
+                canvas.height = gridSize;
+                const ctx = canvas.getContext('2d');
+
+                for (let y = 0; y < gridSize; y++) {
+                    for (let x = 0; x < gridSize; x++) {
+                        const index = y * gridSize + x;
+                        const color = currentColors[index];
+                        const rgb = hexToRgb(color);
+
+                        ctx.fillStyle = color;
+                        ctx.fillRect(x, y, 1, 1);
+                    }
+                }
+
+                canvas.toBlob((blob) => {
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = `iloveherobanenair_${gridSize}x${gridSize}-pixel-art.png`;
+                    link.click();
+                    URL.revokeObjectURL(url);
+                });
+            });
+        }
+
+        if (copyClipboardButton) {
+            copyClipboardButton.addEventListener('click', async (e) => {
+                const rect = copyClipboardButton.getBoundingClientRect();
+
+                const canvas = document.createElement('canvas');
+                canvas.width = gridSize;
+                canvas.height = gridSize;
+                const ctx = canvas.getContext('2d');
+
+                for (let y = 0; y < gridSize; y++) {
+                    for (let x = 0; x < gridSize; x++) {
+                        const i = y * gridSize + x;
+                        ctx.fillStyle = currentColors[i];
+                        ctx.fillRect(x, y, 1, 1);
+                    }
+                }
+
+                canvas.toBlob(async (blob) => {
+                    try {
+                        await navigator.clipboard.write([
+                            new ClipboardItem({ 'image/png': blob })
+                        ]);
+
+                        errorMessage.style.color = 'var(--success-color)';
+                        errorMessage.textContent = 'PNG copied to clipboard!';
+                        setTimeout(() => errorMessage.textContent = '', 2000);
+
+                    } catch (err) {
+                        errorMessage.textContent = 'Clipboard copy failed';
+                    }
+                });
+            });
+        }
+
+    </script>
+
+    <div class="legend">
+        <strong>Controls</strong><br>
+        Left click: change single pixel<br>
+        Right click: change all of same color<br>
+        Ctrl + left click: copy last single-pixel color
+    </div>
+
+</body>
+
+</html>
