@@ -22,8 +22,8 @@
             --button-color: #cccccc;
             --button-hover: #dddddd;
             --border-color: #000000;
-            --modal-bg: rgba(0, 0, 0, 0.5);
-            --modal-content-bg: #ffffff;
+            --screen-bg: rgba(0, 0, 0, 0.5);
+            --screen-content-bg: #ffffff;
             --error-color: #cc0000;
             --success-color: #00aa00;
             --range-gradient: linear-gradient(to right, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000);
@@ -42,8 +42,8 @@
             --button-color: #444444;
             --button-hover: #555555;
             --border-color: #ffffff;
-            --modal-bg: rgba(0, 0, 0, 0.8);
-            --modal-content-bg: #2a2a2a;
+            --screen-bg: rgba(0, 0, 0, 0.8);
+            --screen-content-bg: #2a2a2a;
             --error-color: #ff4444;
             --success-color: #00ff00;
         }
@@ -112,12 +112,12 @@
             z-index: 100;
         }
 
-        .box:hover::after {
+        .box.selected::after {
             transform: translate(-50%, -50%) scale(2.5);
             opacity: 1;
         }
 
-        .color-picker-modal {
+        .color-picker-screen {
             position: fixed;
             top: 50%;
             left: 20px;
@@ -130,17 +130,17 @@
             transform: translateY(-50%);
         }
 
-        .color-picker-modal.active {
+        .color-picker-screen.active {
             display: flex;
             pointer-events: auto;
         }
 
-        .color-picker-modal.active .color-picker-content {
+        .color-picker-screen.active .color-picker-content {
             pointer-events: auto;
         }
 
         .color-picker-content {
-            background: var(--modal-content-bg);
+            background: var(--screen-content-bg);
             padding: 30px;
             border: 2px solid var(--border-color);
             text-align: center;
@@ -257,7 +257,7 @@
             border-radius: 5px;
         }
 
-        .border-settings-modal {
+        .border-settings-screen {
             position: fixed;
             top: 50%;
             left: 20px;
@@ -268,17 +268,17 @@
             pointer-events: none;
         }
 
-        .border-settings-modal.active {
+        .border-settings-screen.active {
             display: flex;
             pointer-events: auto;
         }
 
-        .border-settings-modal.active .border-settings-content {
+        .border-settings-screen.active .border-settings-content {
             pointer-events: auto;
         }
 
         .border-settings-content {
-            background: var(--modal-content-bg);
+            background: var(--screen-content-bg);
             padding: 30px;
             border: 2px solid var(--border-color);
             text-align: left;
@@ -345,7 +345,7 @@
             border-radius: 5px;
         }
 
-        .color-grade-modal {
+        .color-grade-screen {
             position: fixed;
             top: 50%;
             right: 20px;
@@ -356,17 +356,17 @@
             pointer-events: none;
         }
 
-        .color-grade-modal.active {
+        .color-grade-screen.active {
             display: flex;
             pointer-events: auto;
         }
 
-        .color-grade-modal.active .color-grade-content {
+        .color-grade-screen.active .color-grade-content {
             pointer-events: auto;
         }
 
         .color-grade-content {
-            background: var(--modal-content-bg);
+            background: var(--screen-content-bg);
             padding: 30px;
             border: 2px solid var(--border-color);
             text-align: center;
@@ -559,7 +559,7 @@
         </div>
     </div>
 
-    <div class="color-picker-modal" id="colorPickerModal">
+    <div class="color-picker-screen" id="colorPickerScreen">
         <div class="color-picker-content">
             <h2>Choose a new color</h2>
             <div class="color-preview" id="oldColorPreview"></div>
@@ -575,7 +575,7 @@
         </div>
     </div>
 
-    <div class="border-settings-modal" id="borderSettingsModal">
+    <div class="border-settings-screen" id="borderSettingsScreen">
         <div class="border-settings-content">
             <h2>Border Settings</h2>
             <div class="setting-row">
@@ -600,7 +600,7 @@
         </div>
     </div>
 
-    <div class="color-grade-modal" id="colorGradeModal">
+    <div class="color-grade-screen" id="colorGradeScreen">
         <div class="color-grade-content">
             <h2>Color Grade</h2>
             <h5 style="font-weight: lighter;">Right Click on slider to reset</h5>
@@ -666,7 +666,7 @@
     </div>
     <script>
         const grid = document.getElementById('grid');
-        const modal = document.getElementById('colorPickerModal');
+        const screen = document.getElementById('colorPickerScreen');
         const colorPicker = document.getElementById('colorPicker');
         const applyBtn = document.getElementById('applyBtn');
         const cancelBtn = document.getElementById('cancelBtn');
@@ -677,7 +677,7 @@
         const pixelCount = document.getElementById('pixelCount');
         const colorHexText = document.getElementById('colorHexText');
         const colorGradeButton = document.getElementById('colorGradeButton');
-        const colorGradeModal = document.getElementById('colorGradeModal');
+        const colorGradeScreen = document.getElementById('colorGradeScreen');
         const hueSlider = document.getElementById('hueSlider');
         const hueValue = document.getElementById('hueValue');
         const contrastSlider = document.getElementById('contrastSlider');
@@ -691,7 +691,7 @@
         const applyColorGradeBtn = document.getElementById('applyColorGradeBtn');
         const cancelColorGradeBtn = document.getElementById('cancelColorGradeBtn');
         const borderSettingsButton = document.getElementById('borderSettingsButton');
-        const borderSettingsModal = document.getElementById('borderSettingsModal');
+        const borderSettingsScreen = document.getElementById('borderSettingsScreen');
         const borderEnableToggle = document.getElementById('borderEnableToggle');
         const borderCustomColorToggle = document.getElementById('borderCustomColorToggle');
         const borderColorPicker = document.getElementById('borderColorPicker');
@@ -701,10 +701,10 @@
         const copyClipboardButton = document.getElementById('copyClipboardButton');
 
         const elements = {
-            grid, modal, colorPicker, applyBtn, cancelBtn, fileInput,
+            grid, screen, colorPicker, applyBtn, cancelBtn, fileInput,
             darkModeToggle, hueSlider, downloadButton,
-            colorGradeButton, colorGradeModal, borderSettingsButton,
-            borderSettingsModal, borderEnableToggle, borderCustomColorToggle,
+            colorGradeButton, colorGradeScreen, borderSettingsButton,
+            borderSettingsScreen, borderEnableToggle, borderCustomColorToggle,
             borderColorPicker, closeBorderSettingsBtn
         };
 
@@ -983,6 +983,7 @@
         }
 
         let boxes = [];
+        let selectedBox = null;
         let selectedColor = null;
         let selectedIndex = null;
         let editMode = 'single';
@@ -1053,6 +1054,13 @@
                 box.addEventListener('mousedown', (e) => {
                     if (e.button !== 0) return;
 
+                    if (selectedBox && selectedBox !== box) {
+                        selectedBox.classList.remove('selected');
+                    }
+
+                    selectedBox = box;
+                    box.classList.add('selected');
+
                     if (e.ctrlKey || e.metaKey) {
                         isPainting = true;
                         paintColor = lastSingleColor;
@@ -1068,6 +1076,7 @@
                     selectedIndex = index;
                     openColorPicker(currentColors[index]);
                 });
+
 
                 box.addEventListener('mouseenter', () => {
                     if (!isPainting || !paintColor) return;
@@ -1095,8 +1104,8 @@
         }
 
         function openColorPicker(color) {
-            if (borderSettingsModal) borderSettingsModal.classList.remove('active');
-            if (colorGradeModal) colorGradeModal.classList.remove('active');
+            if (borderSettingsScreen) borderSettingsScreen.classList.remove('active');
+            if (colorGradeScreen) colorGradeScreen.classList.remove('active');
             selectedColor = color.toUpperCase();
             const count = editMode === 'all'
                 ? currentColors.filter(c => c.toUpperCase() === selectedColor).length
@@ -1110,13 +1119,20 @@
                     ? `${count} pixels will be changed`
                     : `Only this pixel will be changed`;
 
-            modal.classList.add('active');
+            screen.classList.add('active');
         }
 
-        function closeModal() {
-            modal.classList.remove('active');
+        function closeScreen() {
+            screen.classList.remove('active');
+
+            if (selectedBox) {
+                selectedBox.classList.remove('selected');
+                selectedBox = null;
+            }
+
             selectedColor = null;
         }
+
 
         function applyColorChange() {
             const newColor = colorPicker.value.toUpperCase();
@@ -1135,7 +1151,7 @@
                 box.style.backgroundColor = currentColors[index];
             });
 
-            closeModal();
+            closeScreen();
         }
 
         function handleImageUpload(e) {
@@ -1209,15 +1225,15 @@
 
         if (borderSettingsButton) {
             borderSettingsButton.addEventListener('click', () => {
-                if (modal) modal.classList.remove('active');
-                if (colorGradeModal) colorGradeModal.classList.remove('active');
-                if (borderSettingsModal) borderSettingsModal.classList.add('active');
+                if (screen) screen.classList.remove('active');
+                if (colorGradeScreen) colorGradeScreen.classList.remove('active');
+                if (borderSettingsScreen) borderSettingsScreen.classList.add('active');
             });
         }
 
         if (closeBorderSettingsBtn) {
             closeBorderSettingsBtn.addEventListener('click', () => {
-                if (borderSettingsModal) borderSettingsModal.classList.remove('active');
+                if (borderSettingsScreen) borderSettingsScreen.classList.remove('active');
             });
         }
 
@@ -1262,8 +1278,8 @@
 
         if (colorGradeButton) {
             colorGradeButton.addEventListener('click', () => {
-                if (modal) modal.classList.remove('active');
-                if (borderSettingsModal) borderSettingsModal.classList.remove('active');
+                if (screen) screen.classList.remove('active');
+                if (borderSettingsScreen) borderSettingsScreen.classList.remove('active');
                 originalColors = [...currentColors];
                 if (hueSlider) hueSlider.value = 0;
                 if (hueValue) hueValue.textContent = '0';
@@ -1278,7 +1294,7 @@
 
                 updateColorGradeGradients();
                 updateSliderThumbColor();
-                if (colorGradeModal) colorGradeModal.classList.add('active');
+                if (colorGradeScreen) colorGradeScreen.classList.add('active');
             });
         }
 
@@ -1297,7 +1313,7 @@
 
         if (applyColorGradeBtn) {
             applyColorGradeBtn.addEventListener('click', () => {
-                if (colorGradeModal) colorGradeModal.classList.remove('active');
+                if (colorGradeScreen) colorGradeScreen.classList.remove('active');
             });
         }
 
@@ -1371,7 +1387,7 @@
                 boxes.forEach((box, index) => {
                     box.style.backgroundColor = currentColors[index];
                 });
-                if (colorGradeModal) colorGradeModal.classList.remove('active');
+                if (colorGradeScreen) colorGradeScreen.classList.remove('active');
             });
         }
 
@@ -1386,35 +1402,35 @@
         }
 
         if (cancelBtn) {
-            cancelBtn.addEventListener('click', closeModal);
+            cancelBtn.addEventListener('click', closeScreen);
         }
 
         if (fileInput) {
             fileInput.addEventListener('change', handleImageUpload);
         }
 
-        if (modal) {
-            modal.addEventListener('click', (e) => {
-                if (e.target === modal) {
-                    closeModal();
+        if (screen) {
+            screen.addEventListener('click', (e) => {
+                if (e.target === screen) {
+                    closeScreen();
                 }
             });
         }
 
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
-                if (modal && modal.classList.contains('active')) {
-                    closeModal();
+                if (screen && screen.classList.contains('active')) {
+                    closeScreen();
                 }
-                if (colorGradeModal && colorGradeModal.classList.contains('active')) {
+                if (colorGradeScreen && colorGradeScreen.classList.contains('active')) {
                     currentColors = [...originalColors];
                     boxes.forEach((box, index) => {
                         box.style.backgroundColor = currentColors[index];
                     });
-                    colorGradeModal.classList.remove('active');
+                    colorGradeScreen.classList.remove('active');
                 }
-                if (borderSettingsModal && borderSettingsModal.classList.contains('active')) {
-                    borderSettingsModal.classList.remove('active');
+                if (borderSettingsScreen && borderSettingsScreen.classList.contains('active')) {
+                    borderSettingsScreen.classList.remove('active');
                 }
             }
         });
